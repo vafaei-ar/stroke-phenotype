@@ -19,6 +19,29 @@ For the Center 1 D0 analysis cohort over the manuscript analysis window:
 
 The difference between the manuscript wording and the historical Center 1 implementation therefore affects 57 of 6,582 D0 encounters (0.87%). One of those encounters was same-day and appears in the final historical D0 cohort because the later feature-building step reintroduced a broader encounter record.
 
+## Sensitivity analysis
+
+The same script can now quantify the effect of treating exact LOS >24 hours as a true eligibility criterion before first-event selection. This is important because a patient whose earlier encounter is shorter than 24 hours may have a later encounter that becomes the first qualifying event under the strict rule.
+
+Run locally with the protected legacy intermediates:
+
+```bash
+python scripts/00_audit_legacy_length_of_stay.py \
+  --features ../outcomes/df_phen_details.csv \
+  --legacy-npy ../data_Sep2024.npy \
+  --legacy-counts ../outcomes/PS_conditions.csv \
+  --facility-contains HMC
+```
+
+The sensitivity section reports only aggregate outputs:
+
+- historical versus strict >24-hour cohort size;
+- D0-D8 total changes;
+- number of months changed and maximum monthly absolute difference for each definition;
+- MAE, nMAE, and Pearson correlation before and after the strict rule, using the same registry months.
+
+The script also verifies that the baseline reconstruction still matches the historical monthly D0-D8 count table before interpreting any sensitivity result.
+
 ## Interpretation
 
-The manuscript phrase `>24 hours` is not an exact description of the historical Center 1 cohort-generation code. This does not by itself establish that the manuscript analysis should be rerun with an exact >24-hour restriction. Before changing either the analysis or the Methods wording, quantify how applying an exact >24-hour rule changes D0-D8 totals, monthly counts, and the manuscript validation metrics. Preserve the historical 6,582-row cohort as the regression target unless a deliberate analytic change is made.
+The manuscript phrase `>24 hours` is not an exact description of the historical Center 1 cohort-generation code. The strict sensitivity analysis should be reviewed before changing either the analysis or the Methods wording. Preserve the historical 6,582-row cohort as the regression target unless a deliberate analytic change is made.
