@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .cohort import select_first_qualifying_encounter
-
 
 LEGACY_REQUIRED_COLUMNS = (
     "PATID",
@@ -45,6 +43,26 @@ def _coerce_bool(series: pd.Series) -> pd.Series:
     return normalized.isin(true_values)
 
 
+def _legacy_first_event(df: pd.DataFrame) -> pd.DataFrame:
+    """Reproduce the notebook's historical first-event selection exactly.
+
+    The manuscript-generating notebook used::
+
+        df.sort_values("ADMIT_DATE").drop_duplicates("PATID", keep="first")
+
+    It did not include a secondary encounter-id tie breaker. Therefore two
+    encounters for the same patient on the same admission date can be resolved
+    according to pandas' quicksort ordering. This helper is compatibility code,
+    not the preferred rule for future analyses. New analyses should use the
+    deterministic selector in :mod:`stroke_phenotype.cohort`.
+    """
+    return (
+        df.sort_values("admit_date", kind="quicksort")
+        .drop_duplicates(subset="patient_id", keep="first")
+        .reset_index(drop=True)
+    )
+
+
 def standardize_legacy_center1_features(
     df: pd.DataFrame,
     *,
@@ -56,7 +74,8 @@ def standardize_legacy_center1_features(
     The original manuscript count pipeline used ``MRI-2-ENC`` and ``CT-2-ENC``,
     defined as the union of the 2-day window flag and the same-encounter flag.
     It then selected the first qualifying encounter per patient *before* applying
-    the Center 1 facility restriction. This function preserves that order.
+    the Center 1 facility restriction. This function preserves that order and,
+    for compatibility, preserves the notebook's original tie handling.
 
     Parameters
     ----------
@@ -86,7 +105,7 @@ def standardize_legacy_center1_features(
     )
 
     if first_event_only:
-        out = select_first_qualifying_encounter(out)
+        out = _legacy_first_event(out)
 
     if facility_contains is not None:
         keep = out["facility_id"].str.contains(
