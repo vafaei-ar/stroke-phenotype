@@ -1,0 +1,23 @@
+# Copy to config/centers.local.yaml and edit locally.
+# centers.local.yaml is ignored by Git because it may contain site mappings
+# and protected file-system paths.
+
+centers:
+  Center 1:
+    monthly_counts: data/processed/center1_monthly_counts.csv
+    start_month: null
+    end_month: null
+  Center 2:
+    monthly_counts: data/processed/center2_monthly_counts.csv
+    start_month: null
+    end_month: null
+  Center 3:
+    monthly_counts: data/processed/center3_monthly_counts.csv
+    start_month: null
+    end_month: null
+  Center 4:
+    monthly_counts: data/processed/center4_monthly_counts.csv
+    start_month: null
+    end_month: null
+    unavailable_definitions:
+      - D6
