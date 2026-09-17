@@ -62,6 +62,23 @@ month, SR, D0, D1, ..., D8
 
 where `SR` is the monthly registry count.
 
+## First reproduce the current Center 1 manuscript pipeline
+
+Before refactoring raw EHR extraction, use the protected historical intermediate `outcomes/df_phen_details.csv` to verify that the canonical implementation reproduces the manuscript results:
+
+```bash
+python scripts/01_import_legacy_center1_features.py \
+  --input ../outcomes/df_phen_details.csv \
+  --out data/processed/center1_features.csv \
+  --facility-contains '<LOCAL FACILITY SUBSTRING>'
+
+python scripts/03_build_monthly_counts.py \
+  --features data/processed/center1_features.csv \
+  --out data/processed/center1_definition_counts.csv
+```
+
+The facility value is local protected configuration and should not be committed. See [`docs/legacy_provenance.md`](docs/legacy_provenance.md).
+
 ## Reproduce the manuscript analyses
 
 ```bash
