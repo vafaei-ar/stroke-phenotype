@@ -86,18 +86,32 @@ The aggregate checkpoint is stored in
 
 ## Center 1 D9 linked analysis
 
-If the protected registry-linked input is available in canonical schema, run:
+The historical Center 1 linked validation used FIN as the registry-to-EHR
+encounter key and restricted the registry to Primary ischemic stroke. The clean
+script now supports the legacy registry column names explicitly and preserves
+identifier columns as strings.
+
+Once the protected registry file is located, run the historical validation
+window first and compare D0-D8 against
+`reference/center1_precision_expected.csv`:
 
 ```bash
 python scripts/02_run_linked_validation.py \
   --ehr data/processed/center1_features_from_raw.csv \
   --registry <LOCAL CENTER 1 REGISTRY FILE> \
+  --registry-encounter-col FIN \
+  --registry-diagnosis-col Diagnosis \
+  --registry-type-col Type \
+  --start-date 2018-02-01 \
+  --end-date 2019-02-28 \
   --out outputs/center1_linked_precision_reviewer.csv \
   --include-exploratory
 ```
 
-The registry reference should be restricted to Primary ischemic stroke when
-those fields are available, consistent with the analysis contract.
+The February 2018-February 2019 boundaries should be treated as a regression
+check rather than silently assumed correct. If D0-D8 do not reproduce the
+historical precision values, audit the legacy boundary convention before using
+the new D9 PPV in the manuscript.
 
 
 ## Center 2 and Center 3 Geisinger aggregate importer
@@ -229,6 +243,31 @@ rehabilitation feature capture can be independently confirmed.
 
 The aggregate checkpoint is stored in
 `reference/center4_reviewer_count_expected.csv`.
+
+
+## Multicenter reviewer count checkpoint achieved
+
+The four-center reviewer count rerun is now complete. The final selected metrics
+for D0, D1, D3, D6, and exploratory D9 are stored in
+`reference/multicenter_reviewer_core_expected.csv`.
+
+Key reviewer-facing findings are:
+
+- Center 1 D9 was evaluable, but broadening D6 to CT-or-MRI did not improve
+  monthly registry agreement: D9 MAE 18.98, nMAE 40.33%, r 0.049 versus D6 MAE
+  14.78, nMAE 31.40%, r 0.054.
+- D6 was evaluable at Center 2 (MAE 12.54, nMAE 24.58%, r 0.605) and Center 3
+  (MAE 7.49, nMAE 26.95%, r 0.496).
+- Center 4 used the manuscript-reproducing March 2023 through June 2024 window.
+  D6 remained not evaluable there, while D0, D1, and D3 reproduced the historical
+  manuscript values to rounding.
+- nMAE provides scale-aware interpretation across centers. In particular, the
+  large raw Center 4 MAE values correspond to nMAE values of 282.31% for D0,
+  88.46% for D1, and 97.18% for D3.
+
+The multicenter count-analysis component of the reviewer response is therefore
+complete. The remaining reviewer analysis is the Center 1 linked D9 precision
+check against the protected stroke registry.
 
 ## Manuscript revision rules after results are available
 
