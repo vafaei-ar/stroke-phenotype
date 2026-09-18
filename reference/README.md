@@ -18,7 +18,7 @@ The located `Physical_Rehab.csv` contains 65 rows with columns `CPT Code` and `D
 
 `c85255d34eff3cb2f8dcfabea56e8a37906d54b779f8ead661d577b879ee4854`
 
-The manuscript-generating notebook, however, used a hard-coded rehabilitation list containing 78 entries because CPT codes 97161-97172 appeared twice. After deduplication, that notebook list contains 66 unique CPT codes. Therefore the 65-row `Physical_Rehab.csv` is retained as a reference/audit file, but it is **not assumed to be identical to the historical rehabilitation rule** until the one-code discrepancy is reconciled.
+The manuscript-generating notebook, however, used a hard-coded rehabilitation list containing 78 entries because CPT codes 97161-97172 appeared twice. After deduplication, that notebook list contains 66 unique CPT codes. The reference audit identified the one-code difference exactly: `97156` is present in the notebook rule and absent from the 65-row `Physical_Rehab.csv`. Therefore exact legacy reproduction uses the notebook-derived 66-code rule; the CSV is retained only as a reference/audit source.
 
 Use `scripts/00_prepare_reference_codes.py` to validate the located source files and write standardized local code-list copies:
 
@@ -34,6 +34,6 @@ The generated files are:
 - `reference/lipid_loinc.csv` with columns `loinc_code,component`;
 - `reference/rehab_cpt.csv` with columns `cpt_code,description`.
 
-For exact legacy reproduction, `src/stroke_phenotype/codes.py` uses the 66 unique rehabilitation CPT codes traced directly from the historical notebook. The raw preparation command can compare those codes with `reference/rehab_cpt.csv` and report the difference without changing the historical rule.
+For exact legacy reproduction, `src/stroke_phenotype/codes.py` uses the 66 unique rehabilitation CPT codes traced directly from the historical notebook. The raw preparation command compares those codes with `reference/rehab_cpt.csv` and reports the missing `97156` without changing the historical rule. Using that notebook-derived rehabilitation rule, the raw-data refactor reproduced the historical D0-D8 monthly counts exactly.
 
 The preparation script reads codes as strings, validates the source hashes, columns, and row counts, and does not access patient-level data.
