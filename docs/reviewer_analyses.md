@@ -99,6 +99,52 @@ python scripts/02_run_linked_validation.py \
 The registry reference should be restricted to Primary ischemic stroke when
 those fields are available, consistent with the analysis contract.
 
+
+## Center 2 and Center 3 Geisinger aggregate importer
+
+The legacy Geisinger condition exports are repeated-section pivot tables. Their
+section labels map to the manuscript definitions as follows:
+
+| Legacy section | Definition |
+|---|---|
+| diagnosis | D0 |
+| any imaging AND Chol./Lip. | D1 |
+| any imaging AND (Chol./Lip. OR Phy./Rehab.) | D2 |
+| MRI AND Chol./Lip. | D3 |
+| MRI AND (Chol./Lip. OR Phy./Rehab.) | D4 |
+| any Imaging | D5 |
+| MRI AND Chol./Lip. AND Phy./Rehab. | D6 |
+| MRI | D7 |
+| CT AND Chol./Lip. | D8 |
+
+The historical effective registry windows are Center 2 from January 2017 through
+July 2022 and Center 3 from March 2016 through July 2022. The clean importer
+`scripts/04c_import_geisinger_monthly.py` converts the legacy pivot exports into
+canonical monthly tables with columns `month, SR, D0-D8` and prints MAE, nMAE,
+and Pearson r.
+
+Example local commands:
+
+```bash
+python scripts/04c_import_geisinger_monthly.py \
+  --conditions ../phenotype/geisinger/GMC_conditions.csv \
+  --registry ../phenotype/geisinger/GMC_registery.csv \
+  --start 2017-01 \
+  --end 2022-07 \
+  --out data/processed/center2_monthly_counts.csv
+
+python scripts/04c_import_geisinger_monthly.py \
+  --conditions ../phenotype/geisinger/GCMC_conditions.csv \
+  --registry ../phenotype/geisinger/GCMC_registery.csv \
+  --start 2016-03 \
+  --end 2022-07 \
+  --out data/processed/center3_monthly_counts.csv
+```
+
+The expected historical D6 regression values are MAE 12.54 and r 0.61 for
+Center 2, and MAE 7.49 and r 0.50 for Center 3. The clean rerun should reproduce
+these before the new nMAE values are used in the revision.
+
 ## External D6 and multicenter nMAE
 
 Update `config/centers.local.yaml` so each center points to its local monthly
