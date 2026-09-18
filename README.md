@@ -101,6 +101,21 @@ python scripts/05_generate_manuscript_tables.py \
   --outdir outputs/manuscript
 ```
 
+## Reviewer-requested analyses
+
+The revision adds normalized MAE, external D6 reporting, and exploratory D9.
+See [`docs/reviewer_analyses.md`](docs/reviewer_analyses.md) for the exact
+local workflow. The reviewer outputs are generated with:
+
+```bash
+python scripts/06_generate_reviewer_outputs.py \
+  --count outputs/count_metrics_reviewer.csv \
+  --outdir outputs/reviewer
+```
+
+Add `--linked outputs/center1_linked_precision_reviewer.csv` when the
+reviewer D9 linked analysis has been generated.
+
 ## Privacy
 
 Do not commit patient identifiers, encounter identifiers, patient-level dates, local source paths, or center-name mappings. The public repository uses only generic Center 1-Center 4 labels and aggregate manuscript benchmark values.
