@@ -1,6 +1,11 @@
 # Copy to config/centers.local.yaml and edit locally.
 # centers.local.yaml is ignored by Git because it may contain site mappings
 # and protected file-system paths.
+#
+# If a required structured feature is unavailable at a center, list the
+# affected definitions under unavailable_definitions. Do not encode an
+# unavailable definition as a zero-valued monthly series. For example, add D6
+# only after confirming that rehabilitation is not captured/evaluable locally.
 
 centers:
   Center 1:
@@ -19,5 +24,4 @@ centers:
     monthly_counts: data/processed/center4_monthly_counts.csv
     start_month: null
     end_month: null
-    unavailable_definitions:
-      - D6
+    unavailable_definitions: []
