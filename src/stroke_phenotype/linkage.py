@@ -32,6 +32,22 @@ def _resolve_column(df: pd.DataFrame, requested: str, *, table: str) -> str:
     )
 
 
+def filter_ischemic_registry(
+    registry: pd.DataFrame,
+    *,
+    stroke_type_col: str = "stroke_type",
+) -> pd.DataFrame:
+    """Restrict registry records to ischemic stroke regardless of diagnosis role."""
+    if stroke_type_col not in registry.columns:
+        raise KeyError(f"Registry is missing required column: {stroke_type_col!r}")
+
+    out = registry.copy()
+    out = out[
+        out[stroke_type_col].astype(str).str.strip().str.casefold() == "ischemic"
+    ]
+    return out.copy()
+
+
 def filter_primary_ischemic_registry(
     registry: pd.DataFrame,
     *,
@@ -46,12 +62,12 @@ def filter_primary_ischemic_registry(
     if missing:
         raise KeyError(f"Registry is missing required columns: {missing}")
 
-    out = registry.copy()
+    out = filter_ischemic_registry(
+        registry,
+        stroke_type_col=stroke_type_col,
+    )
     out = out[
         out[diagnosis_col].astype(str).str.strip().str.casefold() == "primary"
-    ]
-    out = out[
-        out[stroke_type_col].astype(str).str.strip().str.casefold() == "ischemic"
     ]
     return out.copy()
 
