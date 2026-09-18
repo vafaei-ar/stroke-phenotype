@@ -21,7 +21,7 @@ def read_table(
     path = Path(path)
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        return pd.read_csv(path, dtype=dtype)
+        return pd.read_csv(path, dtype=dtype, low_memory=False)
     if suffix in {".parquet", ".pq"}:
         return pd.read_parquet(path)
     raise ValueError(f"Unsupported table type: {path}")
