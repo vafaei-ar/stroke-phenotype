@@ -55,7 +55,9 @@ def _definition_rows(
             & (count["definition"] == definition)
         ]
         if match.empty:
-            row = {"center": center, "definition": definition}
+            row = {col: pd.NA for col in COUNT_COLUMNS}
+            row["center"] = center
+            row["definition"] = definition
             row["status"] = "missing_from_input"
         else:
             source = match.iloc[0]
