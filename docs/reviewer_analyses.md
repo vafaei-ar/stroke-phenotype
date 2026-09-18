@@ -145,6 +145,27 @@ The expected historical D6 regression values are MAE 12.54 and r 0.61 for
 Center 2, and MAE 7.49 and r 0.50 for Center 3. The clean rerun should reproduce
 these before the new nMAE values are used in the revision.
 
+## Center 2 and Center 3 checkpoints achieved
+
+The clean Geisinger importer reproduced the manuscript-era regression values for
+both external Geisinger centers.
+
+| Center | Definition | Total | MAE | nMAE | nMAE (%) | Pearson r |
+|---|---|---:|---:|---:|---:|---:|
+| Center 2 | D0 | 4,166 | 14.01 | 0.2748 | 27.48 | 0.150 |
+| Center 2 | D1 | 3,225 | 7.64 | 0.1498 | 14.98 | 0.534 |
+| Center 2 | D3 | 2,684 | 11.54 | 0.2262 | 22.62 | 0.574 |
+| Center 2 | D6 | 2,589 | 12.54 | 0.2458 | 24.58 | 0.605 |
+| Center 3 | D0 | 2,230 | 6.17 | 0.2219 | 22.19 | 0.563 |
+| Center 3 | D1 | 2,060 | 5.60 | 0.2013 | 20.13 | 0.588 |
+| Center 3 | D3 | 1,734 | 6.84 | 0.2461 | 24.61 | 0.553 |
+| Center 3 | D6 | 1,666 | 7.49 | 0.2695 | 26.95 | 0.496 |
+
+The D6 MAE and Pearson-r values reproduce the historical regression targets to
+rounding. These reruns establish that D6 is evaluable at Centers 2 and 3 and can
+be reported in the revision. The full D0-D8 aggregate checkpoint is stored in
+`reference/center23_reviewer_count_expected.csv`.
+
 ## External D6 and multicenter nMAE
 
 Update `config/centers.local.yaml` so each center points to its local monthly
