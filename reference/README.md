@@ -37,3 +37,16 @@ The generated files are:
 For exact legacy reproduction, `src/stroke_phenotype/codes.py` uses the 66 unique rehabilitation CPT codes traced directly from the historical notebook. The raw preparation command compares those codes with `reference/rehab_cpt.csv` and reports the missing `97156` without changing the historical rule. Using that notebook-derived rehabilitation rule, the raw-data refactor reproduced the historical D0-D8 monthly counts exactly.
 
 The preparation script reads codes as strings, validates the source hashes, columns, and row counts, and does not access patient-level data.
+
+
+## Reviewer-analysis checkpoints
+
+Reviewer-requested aggregate rerun results are stored separately from the historical manuscript regression references:
+
+- `center1_reviewer_count_expected.csv`: Center 1 D0-D9 monthly-count checkpoint;
+- `center1_linked_reviewer_expected.csv`: Center 1 final linked D0-D9 PPV checkpoint;
+- `center23_reviewer_count_expected.csv`: Center 2 and Center 3 D0-D8 count checkpoints;
+- `center4_reviewer_count_expected.csv`: Center 4 selected-window checkpoint;
+- `multicenter_reviewer_core_expected.csv`: final selected multicenter reviewer summary.
+
+These files contain aggregate values only and no patient-level identifiers.
