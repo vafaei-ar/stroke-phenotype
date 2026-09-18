@@ -53,7 +53,10 @@ python scripts/03b_attach_registry_counts.py \
 ```
 
 The first command changes only the definition set, not the underlying Center 1
-cohort or feature extraction.
+cohort or feature extraction. The generated phenotype table can extend beyond the
+registry observation period. `03b_attach_registry_counts.py` therefore restricts
+validation to the months present in the registry reference table, while requiring
+a phenotype count for every registry month.
 
 ## Center 1 D9 linked analysis
 
