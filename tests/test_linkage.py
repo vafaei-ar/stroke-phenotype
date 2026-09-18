@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from stroke_phenotype.linkage import (
+    filter_ischemic_registry,
     filter_primary_ischemic_registry,
     linked_patient_precision,
     linked_precision,
@@ -115,3 +116,17 @@ def test_legacy_crosswalk_column_alias_pat_id_vs_patid():
     )
 
     assert truth.tolist() == ["PSU2"]
+
+
+def test_filter_ischemic_registry_includes_secondary():
+    registry = pd.DataFrame({
+        "Diagnosis": ["Primary", "Secondary", "Primary"],
+        "Type": ["Ischemic", "Ischemic", "ICH"],
+    })
+
+    out = filter_ischemic_registry(
+        registry,
+        stroke_type_col="Type",
+    )
+
+    assert out["Diagnosis"].tolist() == ["Primary", "Secondary"]
