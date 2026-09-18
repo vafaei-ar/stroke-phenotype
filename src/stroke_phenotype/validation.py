@@ -9,22 +9,31 @@ import yaml
 
 from .io import read_table
 from .metrics import compute_count_metrics
+from .registry import standardize_month_column
 
 
 def _month_filter(df: pd.DataFrame, start: str | None, end: str | None) -> pd.DataFrame:
-    if "month" in df.columns:
-        month = pd.PeriodIndex(pd.to_datetime(df["month"]), freq="M")
-        df = df.copy()
-        df.index = month
-    elif not isinstance(df.index, pd.PeriodIndex):
-        df = df.copy()
-        df.index = pd.PeriodIndex(df.index, freq="M")
+    """Normalize a monthly table and restrict it to the configured window."""
+    has_month_like_column = (
+        "month" in df.columns
+        or "date" in df.columns
+        or any(str(c).startswith("Unnamed") for c in df.columns)
+    )
+
+    if has_month_like_column:
+        out = standardize_month_column(df)
+        out.index = pd.PeriodIndex(out["month"], freq="M")
+    elif isinstance(df.index, pd.PeriodIndex):
+        out = df.copy()
+    else:
+        out = df.copy()
+        out.index = pd.PeriodIndex(out.index, freq="M")
 
     if start:
-        df = df.loc[pd.Period(start, freq="M") :]
+        out = out.loc[pd.Period(start, freq="M") :]
     if end:
-        df = df.loc[: pd.Period(end, freq="M")]
-    return df
+        out = out.loc[: pd.Period(end, freq="M")]
+    return out
 
 
 def load_center_config(path: str | Path) -> dict:
