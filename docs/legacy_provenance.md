@@ -84,14 +84,30 @@ The reproducible Center 1 D0 total is **6,582**. The prior manuscript value of 6
 
 The manuscript states hospitalization >24 hours, whereas the historical Center 1 implementation used a calendar-day rule. The strict >24-hour sensitivity changed Center 1 D0 from 6,582 to 6,534 and produced only small changes in monthly validation metrics. The current reproducibility target therefore remains the historical cohort; the Methods wording and cross-site LOS operationalization should be resolved explicitly rather than silently changing the Center 1 analysis.
 
-## Current raw-data refactor checkpoint
+## Raw-data refactor checkpoint achieved
 
-The raw schemas have now been confirmed for `diagnosis.parquet`, `encounter.parquet`, `procedures.parquet`, and `lab_result_cm.parquet`. The new preparation module reads only the needed columns and produces the canonical local schema:
+The raw schemas were confirmed for `diagnosis.parquet`, `encounter.parquet`, `procedures.parquet`, and `lab_result_cm.parquet`. The new preparation module reads only the needed columns and produces the canonical local schema:
 
 ```text
 patient_id, encounter_id, admit_date, facility_id, ct, mri, lipid, rehab
 ```
 
-The next checkpoint is to run this command against the local raw snapshot, rebuild monthly D0-D8 counts, and compare them with `PS_conditions.csv`. If the current raw snapshot does not reproduce the frozen target, older local snapshots should be tested before changing any scientific logic.
+Running `scripts/01_prepare_center1_features.py` against the current protected `stroke_data` snapshot produced 14,890 reconstructed legacy detail rows and 11,147 standardized first-event rows. Rebuilding monthly D0-D8 counts from those standardized rows reproduced `PS_conditions.csv` exactly over all 85 months from December 2016 through December 2023:
 
-One additional item remains to audit upstream: the manuscript specifies adults age >=18, but the four raw tables used by the current preparer do not contain age. Age eligibility should be traced to the historical extraction source before the raw pipeline is considered a complete Methods-level reproduction.
+| Definition | Legacy total | Raw-refactor total | Maximum monthly absolute difference |
+|---|---:|---:|---:|
+| D0 | 6,582 | 6,582 | 0 |
+| D1 | 4,953 | 4,953 | 0 |
+| D2 | 5,872 | 5,872 | 0 |
+| D3 | 4,320 | 4,320 | 0 |
+| D4 | 4,821 | 4,821 | 0 |
+| D5 | 6,192 | 6,192 | 0 |
+| D6 | 3,388 | 3,388 | 0 |
+| D7 | 5,016 | 5,016 | 0 |
+| D8 | 4,189 | 4,189 | 0 |
+
+This establishes an end-to-end Center 1 count-reproduction path from the protected raw PCORnet tables to the manuscript-generating monthly phenotype counts without depending on `data_Sep2024.npy` or `phd_rec.ipynb`.
+
+The rehabilitation reference audit also identified the exact difference between the 65-row `Physical_Rehab.csv` and the 66 unique notebook-derived CPT codes: `97156` is present in the notebook rule and absent from the CSV. Exact historical reproduction therefore continues to use the notebook-derived list.
+
+One upstream item remains before the raw pipeline can be considered a complete Methods-level reproduction: the manuscript specifies adults age >=18, but the four raw tables used by the current preparer do not contain age. Age eligibility must be traced to the historical extraction source rather than assumed.
