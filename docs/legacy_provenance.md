@@ -1,16 +1,27 @@
 # Legacy-to-canonical provenance
 
-The historical analysis was developed across multiple notebooks. To avoid changing results while the raw-EHR extraction is being refactored, the repository first reproduces the manuscript from the protected intermediate table created by the Center 1 notebook.
+The historical analysis was developed across multiple notebooks. The refactor therefore proceeds in checkpoints: first reproduce the manuscript-generating intermediate outputs, then replace the raw extraction without silently changing the scientific analysis.
 
-## Current provenance
+## Historical Center 1 pipeline
 
-The historical Center 1 count pipeline is:
+The traced historical Center 1 pipeline is:
 
 ```text
-protected raw EHR tables
+protected PCORnet tables
+        |
+        v
+stroke-code encounter selection
+        |
+        +-- encounter type restricted to EI/IP
+        +-- overnight/non-same-calendar-day patient qualification
+        +-- procedure/lab subsets built from qualifying encounter and patient IDs
         |
         v
 phd_rec.ipynb
+        |
+        +-- CT/MRI same-encounter flags
+        +-- CT/MRI absolute +/-2-day patient-history flags
+        +-- lipid and rehabilitation same-encounter flags
         |
         v
 outcomes/df_phen_details.csv
@@ -28,7 +39,7 @@ local Center 1 facility restriction
 D0-D8 monthly counts
 ```
 
-The compatibility importer in `scripts/01_import_legacy_center1_features.py` reproduces the middle of this pipeline without committing any patient-level data.
+The compatibility importer in `scripts/01_import_legacy_center1_features.py` reproduces the pipeline from `df_phen_details.csv` forward. The new `scripts/01_prepare_center1_features.py` begins the upstream replacement from the protected raw PCORnet Parquet tables.
 
 ## Compatibility checkpoint achieved
 
@@ -46,30 +57,41 @@ On the protected Center 1 intermediate data, the clean compatibility pipeline re
 | D7 | 5,016 | 5,016 | 0 |
 | D8 | 4,189 | 4,189 | 0 |
 
-This establishes the historical Center 1 monthly phenotype-count pipeline as a frozen regression target while the upstream raw-EHR extraction is refactored.
+This is the frozen regression target while the upstream raw-EHR extraction is refactored.
 
-## Why this bridge exists
+## Historical behaviors that must be reproduced before cleanup
 
-The original notebook contains raw extraction, exploratory analyses, hard-coded local paths, and manuscript calculations in one file. Rewriting all of that at once risks changing the scientific analysis silently. The compatibility stage lets us first prove that the new canonical D0-D8 implementation reproduces the current manuscript results. After that check passes, the protected raw-EHR extraction can be refactored into a separate, testable preparation module.
+1. Stroke-code encounters were restricted to EI/IP encounter types.
+2. The notebook's hospitalization rule was not an exact elapsed LOS >24-hour calculation. It used a non-same-calendar-day qualification step. The separate LOS audit documents the resulting sensitivity analysis.
+3. That qualification created eligible patient and encounter IDs but did not permanently filter the broader stroke-encounter table. As a result, a same-day stroke encounter could later reappear for a patient who had another qualifying overnight encounter.
+4. The patient list used to build `df_phen_details.csv` came from the qualifying-patient procedure subset. Therefore an otherwise qualifying patient with no procedure record could be absent from the detail table. This historical behavior is preserved only for regression testing and should be evaluated before any canonical redesign.
+5. The historical imaging variable used in D0-D8 was `MRI-2-ENC`/`CT-2-ENC`, defined as the union of a same-encounter flag and a patient-history imaging flag where the minimum **absolute** difference between admission date and procedure date was <=2 days. This is not identical to the manuscript prose stating two days before admission through the end of hospitalization.
+6. Rehabilitation and lipid flags were same-encounter signals from the qualifying encounter subsets.
+7. The historical code selected the first qualifying encounter per patient before applying the local facility restriction. The compatibility importer preserves this ordering, including the original same-date tie behavior, for reproduction only.
+8. Local facility strings and patient-level data remain local and must not be committed.
 
-## Important historical behavior preserved
+## Code-list provenance
 
-1. The candidate table is already ICD-eligible.
-2. D0 is therefore every eligible row.
-3. The manuscript imaging flag used `MRI-2-ENC`/`CT-2-ENC`, the union of the 2-day and same-encounter indicators.
-4. The historical code selected the first qualifying encounter per patient before applying the local facility restriction. The compatibility importer preserves this ordering exactly, including legacy same-date tie behavior for reproduction only.
-5. Local facility strings belong in local command lines/configuration only and must not be committed.
+The historical imaging lists contain 3 CT CPT codes and 6 MRI CPT codes. The ischemic stroke lists contain 9 ICD-9 codes and 118 ICD-10 codes. The lipid list contains 214 LOINC entries and was recovered from the historical CSV.
 
-## Open reconciliation item
+The manuscript-generating rehabilitation code used a hard-coded list of 78 entries with a duplicated 97161-97172 block, corresponding to 66 unique CPT codes. A separately located `Physical_Rehab.csv` has 65 rows. Exact legacy reproduction therefore uses the 66 notebook-derived unique codes while the one-code discrepancy is audited.
 
-The frozen Center 1 monthly D0 total is 6,582, while the current manuscript reports 6,579 for the Center 1 ICD-only analytic cohort. This 3-record discrepancy is not caused by the clean refactor because the refactor reproduces the historical monthly file exactly. It should be reconciled against the manuscript cohort-count derivation before the manuscript is revised.
+## Resolved Center 1 D0 count
 
-## Next refactor stage
+The reproducible Center 1 D0 total is **6,582**. The prior manuscript value of 6,579 was traced to a manually entered/stale value rather than a reproducible count derivation. Unless a separate scientifically justified exclusion is found, the manuscript should be corrected to 6,582; with the other three site totals unchanged, the corresponding four-center total becomes 14,469.
 
-Replace the notebook extraction with a protected-data preparation command that reads the local EHR tables and produces the same canonical schema:
+## Length-of-stay discrepancy
+
+The manuscript states hospitalization >24 hours, whereas the historical Center 1 implementation used a calendar-day rule. The strict >24-hour sensitivity changed Center 1 D0 from 6,582 to 6,534 and produced only small changes in monthly validation metrics. The current reproducibility target therefore remains the historical cohort; the Methods wording and cross-site LOS operationalization should be resolved explicitly rather than silently changing the Center 1 analysis.
+
+## Current raw-data refactor checkpoint
+
+The raw schemas have now been confirmed for `diagnosis.parquet`, `encounter.parquet`, `procedures.parquet`, and `lab_result_cm.parquet`. The new preparation module reads only the needed columns and produces the canonical local schema:
 
 ```text
-patient_id, encounter_id, admit_date, ct, mri, lipid, rehab
+patient_id, encounter_id, admit_date, facility_id, ct, mri, lipid, rehab
 ```
 
-That change should be validated against the compatibility output before the historical notebook is retired.
+The next checkpoint is to run this command against the local raw snapshot, rebuild monthly D0-D8 counts, and compare them with `PS_conditions.csv`. If the current raw snapshot does not reproduce the frozen target, older local snapshots should be tested before changing any scientific logic.
+
+One additional item remains to audit upstream: the manuscript specifies adults age >=18, but the four raw tables used by the current preparer do not contain age. Age eligibility should be traced to the historical extraction source before the raw pipeline is considered a complete Methods-level reproduction.
