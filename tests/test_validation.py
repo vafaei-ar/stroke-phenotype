@@ -16,3 +16,19 @@ def test_month_filter_accepts_legacy_date_column() -> None:
 
     assert out["month"].tolist() == ["2023-02", "2023-03"]
     assert out.index.astype(str).tolist() == ["2023-02", "2023-03"]
+
+
+def test_month_filter_sorts_unsorted_legacy_months_before_slicing() -> None:
+    df = pd.DataFrame(
+        {
+            "date": ["2024-06", "2023-03", "2023-01", "2023-04", "2024-05"],
+            "SR": [5, 2, 1, 3, 4],
+            "D0": [6, 3, 2, 4, 5],
+        }
+    )
+
+    out = _month_filter(df, "2023-03", "2024-06")
+
+    assert out["month"].tolist() == [
+        "2023-03", "2023-04", "2024-05", "2024-06"
+    ]
