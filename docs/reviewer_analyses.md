@@ -136,10 +136,28 @@ python scripts/02_run_linked_validation.py \
   --include-exploratory
 ```
 
-If D0-D8 reproduce the historical rounded precision values under this
-configuration, report the reviewer-requested D9 PPV from the same linked cohort
-as an exploratory sensitivity result and retain the small residual count
-differences as a provenance limitation.
+The final rerun reproduced every historical rounded D0-D8 precision value. The largest absolute difference from the stored rounded reference was 0.53 percentage points.
+
+## Center 1 D9 linked checkpoint achieved
+
+| Definition | Positive | Matched registry | PPV (%) | Historical (%) |
+|---|---:|---:|---:|---:|
+| D0 | 921 | 640 | 69.49 | 69 |
+| D1 | 721 | 574 | 79.61 | 80 |
+| D2 | 830 | 605 | 72.89 | 73 |
+| D3 | 609 | 501 | 82.27 | 82 |
+| D4 | 678 | 525 | 77.43 | 77 |
+| D5 | 878 | 621 | 70.73 | 71 |
+| D6 | 417 | 338 | 81.06 | 81 |
+| D7 | 713 | 538 | 75.46 | 75 |
+| D8 | 559 | 439 | 78.53 | 78 |
+| D9 | 485 | 378 | 77.94 | NA |
+
+The reviewer-requested D9 linked PPV is therefore 77.94% (378/485). Relative to D6, D9 added 68 linked-validation positives but PPV decreased from 81.06% to 77.94%. This is consistent with the count analysis, where D9 also had worse MAE/nMAE than D6.
+
+The linked result should remain an exploratory reviewer-requested sensitivity analysis. A provenance discrepancy remains because the later notebook applies a Primary+Ischemic registry restriction, while the manuscript-era precision table is reproduced by all ischemic registry rows in the February 2018 through January 2019 window.
+
+The final linked aggregate checkpoint is stored in `reference/center1_linked_reviewer_expected.csv`.
 
 
 ## Center 2 and Center 3 Geisinger aggregate importer
@@ -293,9 +311,7 @@ Key reviewer-facing findings are:
   large raw Center 4 MAE values correspond to nMAE values of 282.31% for D0,
   88.46% for D1, and 97.18% for D3.
 
-The multicenter count-analysis component of the reviewer response is therefore
-complete. The remaining reviewer analysis is the Center 1 linked D9 precision
-check against the protected stroke registry.
+The multicenter count analysis and the Center 1 linked D9 analysis are complete. The reviewer-requested D9, external D6, and nMAE analyses are therefore complete.
 
 ## Manuscript revision rules after results are available
 
