@@ -134,6 +134,35 @@ The reviewer generator writes:
 - `reviewer_d9_center1_linked.csv` when linked input is supplied
 - `reviewer_core_summary.csv`
 
+
+## Center 4 selected-window checkpoint achieved
+
+The historical Center 4 aggregate table contains earlier months, but the
+manuscript-generating analysis used March 2023 through June 2024. This window
+selection is supported by both provenance and numerical reproduction.
+
+Using January 2023 through June 2024 produced D0 total 1,592, MAE 64.83, and
+Pearson r 0.528. Restricting to March 2023 through June 2024 produced D0 total
+1,491, MAE 68.81, and r 0.292; D1 MAE 21.56 and r 0.200; and D3 MAE 23.69 and
+r 0.306. These values reproduce the manuscript reference values to rounding.
+
+Accordingly, the March 2023 through June 2024 interval should be documented as
+the usable Center 4 benchmarking period selected after inspection of overlapping
+EHR and registry completeness. The manuscript already states that center-specific
+periods were restricted to intervals with acceptable completeness. The exact
+technical defect in the excluded January-February 2023 data is not reconstructed
+here, so the revision should describe this as a data-completeness/quality
+restriction rather than invent a more specific cause.
+
+D6 is present in the source aggregate table as all zero, but the historical
+analysis explicitly dropped D6 and skipped it in downstream Center 4 evaluation.
+Therefore the zero series should not be interpreted as an observed zero-case
+phenotype. For reporting, Center 4 D6 remains not evaluable unless the upstream
+rehabilitation feature capture can be independently confirmed.
+
+The aggregate checkpoint is stored in
+`reference/center4_reviewer_count_expected.csv`.
+
 ## Manuscript revision rules after results are available
 
 - Add nMAE to the count-based Methods and manuscript-facing tables.
