@@ -29,6 +29,8 @@ def _month_filter(df: pd.DataFrame, start: str | None, end: str | None) -> pd.Da
         out = df.copy()
         out.index = pd.PeriodIndex(out.index, freq="M")
 
+    out = out.sort_index()
+
     if start:
         out = out.loc[pd.Period(start, freq="M") :]
     if end:
