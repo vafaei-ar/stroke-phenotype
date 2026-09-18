@@ -86,20 +86,28 @@ The aggregate checkpoint is stored in
 
 ## Center 1 D9 linked analysis
 
-The historical Center 1 linked validation used FIN as the registry-to-EHR
-encounter key and restricted the registry to Primary ischemic stroke. The clean
-script now supports the legacy registry column names explicitly and preserves
-identifier columns as strings.
+The historical Center 1 linked validation did not compare registry FIN directly
+with the EHR encounter identifier. The notebook first merged the registry to
+`MRN to PatID_04212025.csv` on FIN, retained mapped PSU PAT_ID values, and then
+used those EHR patient identifiers as the registry truth set. The historical
+precision calculation compared phenotype-positive PATID sets with that linked
+registry PATID set.
 
-Once the protected registry file is located, run the historical validation
-window first and compare D0-D8 against
+The clean script now reproduces that FIN-to-PAT_ID crosswalk explicitly,
+preserves identifier columns as strings, and keeps direct encounter linkage only
+as a separate non-legacy mode.
+
+Run the historical validation window first and compare D0-D8 against
 `reference/center1_precision_expected.csv`:
 
 ```bash
 python scripts/02_run_linked_validation.py \
   --ehr data/processed/center1_features_from_raw.csv \
-  --registry <LOCAL CENTER 1 REGISTRY FILE> \
-  --registry-encounter-col FIN \
+  --registry "../reg_inv/Super Universe_Zand 04142025.csv" \
+  --registry-conversion "../reg_inv/MRN to PatID_04212025.csv" \
+  --registry-fin-col FIN \
+  --conversion-fin-col FIN \
+  --conversion-patient-col PAT_ID \
   --registry-diagnosis-col Diagnosis \
   --registry-type-col Type \
   --start-date 2018-02-01 \
