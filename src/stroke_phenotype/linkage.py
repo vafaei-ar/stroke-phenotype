@@ -2,9 +2,34 @@
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 from .definitions import phenotype_masks
+
+
+def _resolve_column(df: pd.DataFrame, requested: str, *, table: str) -> str:
+    """Resolve a legacy column name allowing case/spacing/underscore variants."""
+    if requested in df.columns:
+        return requested
+
+    def norm(value: object) -> str:
+        return re.sub(r"[^a-z0-9]+", "", str(value).strip().casefold())
+
+    target = norm(requested)
+    matches = [col for col in df.columns if norm(col) == target]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise KeyError(
+            f"{table} column {requested!r} is ambiguous; matches: {matches}"
+        )
+
+    raise KeyError(
+        f"{table} column not found: {requested!r}. "
+        f"Available columns: {list(df.columns)}"
+    )
 
 
 def filter_primary_ischemic_registry(
@@ -46,16 +71,29 @@ def registry_patient_ids_from_fin_crosswalk(
     merged to the FIN-to-PAT_ID conversion table, then unique mapped EHR patient
     identifiers are used as the linked registry truth set.
     """
-    for name, df, col in (
-        ("registry", registry, registry_fin_col),
-        ("conversion", conversion, conversion_fin_col),
-        ("conversion", conversion, conversion_patient_col),
-    ):
-        if col not in df.columns:
-            raise KeyError(f"{name} column not found: {col!r}")
+    registry_fin_actual = _resolve_column(
+        registry, registry_fin_col, table="registry"
+    )
+    conversion_fin_actual = _resolve_column(
+        conversion, conversion_fin_col, table="conversion"
+    )
+    conversion_patient_actual = _resolve_column(
+        conversion, conversion_patient_col, table="conversion"
+    )
 
     reg = registry.copy()
-    conv = conversion[[conversion_fin_col, conversion_patient_col]].copy()
+    conv = conversion[
+        [conversion_fin_actual, conversion_patient_actual]
+    ].copy()
+
+    if registry_fin_actual != registry_fin_col:
+        reg = reg.rename(columns={registry_fin_actual: registry_fin_col})
+    if conversion_fin_actual != conversion_fin_col:
+        conv = conv.rename(columns={conversion_fin_actual: conversion_fin_col})
+    if conversion_patient_actual != conversion_patient_col:
+        conv = conv.rename(
+            columns={conversion_patient_actual: conversion_patient_col}
+        )
 
     reg[registry_fin_col] = (
         reg[registry_fin_col].astype("string").str.strip()
