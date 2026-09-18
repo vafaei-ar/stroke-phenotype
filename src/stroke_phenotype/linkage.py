@@ -13,12 +13,21 @@ def filter_primary_ischemic_registry(
     diagnosis_col: str = "diagnosis",
     stroke_type_col: str = "stroke_type",
 ) -> pd.DataFrame:
-    """Restrict registry records to primary ischemic stroke when fields exist."""
+    """Restrict registry records to primary ischemic stroke."""
+    missing = [
+        c for c in (diagnosis_col, stroke_type_col)
+        if c not in registry.columns
+    ]
+    if missing:
+        raise KeyError(f"Registry is missing required columns: {missing}")
+
     out = registry.copy()
-    if diagnosis_col in out.columns:
-        out = out[out[diagnosis_col].astype(str).str.casefold() == "primary"]
-    if stroke_type_col in out.columns:
-        out = out[out[stroke_type_col].astype(str).str.casefold() == "ischemic"]
+    out = out[
+        out[diagnosis_col].astype(str).str.strip().str.casefold() == "primary"
+    ]
+    out = out[
+        out[stroke_type_col].astype(str).str.strip().str.casefold() == "ischemic"
+    ]
     return out.copy()
 
 
@@ -27,14 +36,26 @@ def linked_precision(
     registry: pd.DataFrame,
     *,
     encounter_col: str = "encounter_id",
+    registry_encounter_col: str | None = None,
     include_exploratory: bool = False,
 ) -> pd.DataFrame:
     """Compute encounter-level precision/PPV for each phenotype definition."""
-    if encounter_col not in ehr.columns or encounter_col not in registry.columns:
-        raise KeyError(f"Both tables must contain encounter column {encounter_col!r}")
+    registry_encounter_col = registry_encounter_col or encounter_col
 
-    registry_ids = set(registry[encounter_col].dropna().astype(str))
-    ehr_ids = ehr[encounter_col].astype(str)
+    if encounter_col not in ehr.columns:
+        raise KeyError(f"EHR encounter column not found: {encounter_col!r}")
+    if registry_encounter_col not in registry.columns:
+        raise KeyError(
+            f"Registry encounter column not found: {registry_encounter_col!r}"
+        )
+
+    registry_ids = set(
+        registry[registry_encounter_col]
+        .dropna()
+        .astype("string")
+        .str.strip()
+    )
+    ehr_ids = ehr[encounter_col].astype("string").str.strip()
     masks = phenotype_masks(ehr, include_exploratory=include_exploratory)
 
     rows = []
