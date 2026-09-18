@@ -110,4 +110,16 @@ This establishes an end-to-end Center 1 count-reproduction path from the protect
 
 The rehabilitation reference audit also identified the exact difference between the 65-row `Physical_Rehab.csv` and the 66 unique notebook-derived CPT codes: `97156` is present in the notebook rule and absent from the CSV. Exact historical reproduction therefore continues to use the notebook-derived list.
 
-One upstream item remains before the raw pipeline can be considered a complete Methods-level reproduction: the manuscript specifies adults age >=18, but the four raw tables used by the current preparer do not contain age. Age eligibility must be traced to the historical extraction source rather than assumed.
+### Adult-age eligibility audit
+
+The manuscript currently describes the cohort as adults age >=18. The historical Center 1 notebook provenance does not show an explicit age filter in the phenotype-construction path traced so far. In `eda_Jan2024.ipynb`, `patid_dic` is created directly from diagnosis rows matching the ischemic/hemorrhagic code lists:
+
+```text
+sub_df = df_dx[df_dx['DX'].isin(codes)].compute()
+patid_dic[i] = unique(sub_df['PATID'])
+encid_dic[i] = unique(sub_df['ENCOUNTERID'])
+```
+
+The later `stroke_data` export builds `pat_id_all` from those diagnosis-derived patient-ID sets and subsets each PCORnet table by PATID. That export contains no demographic join, BIRTH_DATE calculation, or age >=18 condition. Demographics and age are merged/calculated later for descriptive and downstream analyses.
+
+This strongly indicates that age >=18 was not explicitly enforced in the traced Center 1 phenotype pipeline. One narrow provenance check remains before treating this as fully resolved: confirm that `df_dx` itself was loaded from the diagnosis source without an upstream age-restricted filter. The clean raw-data preparer should not add an age filter unless such an upstream restriction is found.
