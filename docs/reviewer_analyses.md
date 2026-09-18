@@ -97,8 +97,26 @@ The clean script now reproduces that FIN-to-PAT_ID crosswalk explicitly,
 preserves identifier columns as strings, and keeps direct encounter linkage only
 as a separate non-legacy mode.
 
-Run the historical validation window first and compare D0-D8 against
-`reference/center1_precision_expected.csv`:
+Regression audits substantially narrowed the historical linked-validation
+configuration. All available registry snapshots produced identical values over
+the candidate period. The closest match to the historical linked counts used the
+12-month EHR/registry window February 2018 through January 2019 and included all
+ischemic registry rows regardless of Primary/Secondary diagnosis role.
+
+That configuration reproduced the historical aggregate counts closely:
+registry truth 702 versus 701; D0 positive 921 versus 918 and matched 640 versus
+636; D1 positive 721 versus 720 and matched 574 versus 573. By contrast,
+restricting the registry to Primary ischemic stroke reduced the linked truth set
+to 630 and materially worsened the precision regression.
+
+This creates a provenance discrepancy: the later `new_approach_reg.ipynb`
+explicitly filters the registry to Primary ischemic stroke, whereas the
+manuscript-era linked precision table is numerically consistent with all ischemic
+registry rows. Preserve that distinction in the audit trail rather than silently
+forcing the later notebook rule onto the historical precision table.
+
+Run the best-matching historical regression configuration and compare D0-D8
+against `reference/center1_precision_expected.csv`:
 
 ```bash
 python scripts/02_run_linked_validation.py \
@@ -110,16 +128,18 @@ python scripts/02_run_linked_validation.py \
   --conversion-patient-col PAT_ID \
   --registry-diagnosis-col Diagnosis \
   --registry-type-col Type \
+  --registry-diagnosis-mode any \
+  --registry-date-col "Admit Date" \
   --start-date 2018-02-01 \
-  --end-date 2019-02-28 \
+  --end-date 2019-01-31 \
   --out outputs/center1_linked_precision_reviewer.csv \
   --include-exploratory
 ```
 
-The February 2018-February 2019 boundaries should be treated as a regression
-check rather than silently assumed correct. If D0-D8 do not reproduce the
-historical precision values, audit the legacy boundary convention before using
-the new D9 PPV in the manuscript.
+If D0-D8 reproduce the historical rounded precision values under this
+configuration, report the reviewer-requested D9 PPV from the same linked cohort
+as an exploratory sensitivity result and retain the small residual count
+differences as a provenance limitation.
 
 
 ## Center 2 and Center 3 Geisinger aggregate importer
