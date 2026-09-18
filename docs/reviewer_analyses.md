@@ -58,6 +58,32 @@ registry observation period. `03b_attach_registry_counts.py` therefore restricts
 validation to the months present in the registry reference table, while requiring
 a phenotype count for every registry month.
 
+## Center 1 D9 count checkpoint achieved
+
+The reviewer count rerun has now been completed against the same 85-month
+registry window used for the historical Center 1 validation. Adding D9 did not
+alter any D0-D8 monthly count: the legacy comparison remained an exact match for
+all definitions.
+
+The selected Center 1 metrics were:
+
+| Definition | Total | MAE | nMAE | nMAE (%) | Pearson r |
+|---|---:|---:|---:|---:|---:|
+| D0 | 6,582 | 30.45 | 0.6470 | 64.70 | 0.425 |
+| D1 | 4,953 | 12.58 | 0.2673 | 26.73 | 0.642 |
+| D3 | 4,320 | 8.14 | 0.1730 | 17.30 | 0.588 |
+| D6 | 3,388 | 14.78 | 0.3140 | 31.40 | 0.054 |
+| D9 | 3,827 | 18.98 | 0.4033 | 40.33 | 0.049 |
+
+For Center 1, broadening D6 from MRI to CT-or-MRI increased the D9 count by 439
+patients, but did not improve count agreement with the registry: MAE increased
+from 14.78 to 18.98 encounters/month and Pearson r remained near zero. This
+should be described as a Center 1 exploratory result, not generalized to the
+external centers before their reruns are available.
+
+The aggregate checkpoint is stored in
+`reference/center1_reviewer_count_expected.csv`.
+
 ## Center 1 D9 linked analysis
 
 If the protected registry-linked input is available in canonical schema, run:
