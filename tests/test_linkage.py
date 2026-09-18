@@ -87,3 +87,31 @@ def test_registry_filter_requires_primary_and_type_fields():
             diagnosis_col="Diagnosis",
             stroke_type_col="Type",
         )
+
+
+def test_legacy_crosswalk_column_alias_pat_id_vs_patid():
+    registry = pd.DataFrame({
+        "FIN": ["0011"],
+        "Diagnosis": ["Primary"],
+        "Type": ["Ischemic"],
+    })
+    conversion = pd.DataFrame({
+        "FIN": ["0011"],
+        "PATID": ["PSU2"],
+    })
+
+    registry = filter_primary_ischemic_registry(
+        registry,
+        diagnosis_col="Diagnosis",
+        stroke_type_col="Type",
+    )
+    truth = registry_patient_ids_from_fin_crosswalk(
+        registry,
+        conversion,
+        registry_fin_col="FIN",
+        conversion_fin_col="FIN",
+        conversion_patient_col="PAT_ID",
+        patient_prefix="PSU",
+    )
+
+    assert truth.tolist() == ["PSU2"]
