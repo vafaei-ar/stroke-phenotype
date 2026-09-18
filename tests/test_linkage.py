@@ -1,7 +1,12 @@
 import pandas as pd
 import pytest
 
-from stroke_phenotype.linkage import filter_primary_ischemic_registry, linked_precision
+from stroke_phenotype.linkage import (
+    filter_primary_ischemic_registry,
+    linked_patient_precision,
+    linked_precision,
+    registry_patient_ids_from_fin_crosswalk,
+)
 
 
 def test_registry_filter_and_encounter_linked_precision():
@@ -25,18 +30,22 @@ def test_registry_filter_and_encounter_linked_precision():
     assert out.loc["D6", "precision"] == 1.0
 
 
-def test_legacy_registry_column_names_and_leading_zero_ids():
+def test_legacy_fin_crosswalk_to_patient_precision():
     ehr = pd.DataFrame({
-        "encounter_id": ["0010", "0011"],
-        "ct": [True, True],
-        "mri": [False, True],
-        "lipid": [True, True],
-        "rehab": [False, True],
+        "patient_id": ["PSU1", "PSU2", "PSU3"],
+        "ct": [True, True, False],
+        "mri": [False, True, True],
+        "lipid": [True, True, True],
+        "rehab": [False, True, False],
     })
     registry = pd.DataFrame({
         "FIN": ["0011", "0099", "0010"],
         "Diagnosis": ["Primary", "Primary", "Secondary"],
         "Type": ["Ischemic", "Ischemic", "Ischemic"],
+    })
+    conversion = pd.DataFrame({
+        "FIN": ["0011", "0099", "0010", "7777"],
+        "PAT_ID": ["PSU2", "PSU9", "PSU1", "OTHER1"],
     })
 
     registry = filter_primary_ischemic_registry(
@@ -44,15 +53,30 @@ def test_legacy_registry_column_names_and_leading_zero_ids():
         diagnosis_col="Diagnosis",
         stroke_type_col="Type",
     )
-    out = linked_precision(
-        ehr,
+    truth = registry_patient_ids_from_fin_crosswalk(
         registry,
-        registry_encounter_col="FIN",
+        conversion,
+        registry_fin_col="FIN",
+        conversion_fin_col="FIN",
+        conversion_patient_col="PAT_ID",
+        patient_prefix="PSU",
+    )
+
+    assert set(truth) == {"PSU2", "PSU9"}
+
+    out = linked_patient_precision(
+        ehr,
+        truth,
+        patient_col="patient_id",
+        include_exploratory=True,
     ).set_index("definition")
 
+    assert out.loc["D0", "definition_positive"] == 3
     assert out.loc["D0", "matched_registry"] == 1
+    assert out.loc["D6", "definition_positive"] == 1
     assert out.loc["D6", "matched_registry"] == 1
     assert out.loc["D6", "precision"] == 1.0
+    assert out.loc["D9", "precision"] == 1.0
 
 
 def test_registry_filter_requires_primary_and_type_fields():
