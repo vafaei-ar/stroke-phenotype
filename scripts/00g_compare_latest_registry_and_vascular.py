@@ -165,7 +165,31 @@ def load_geisinger_registry(path: Path, *, start: str, end: str) -> pd.DataFrame
 
 
 def latest_metrics(counts: pd.DataFrame, registry: pd.DataFrame) -> pd.DataFrame:
-    aligned, _ = align_counts_to_registry_months(counts, registry, registry_col="SR")
+    # Preserve both manuscript D* definitions and exploratory V* definitions.
+    # The shared registry helper intentionally keeps only D-prefixed columns,
+    # which is appropriate for manuscript analyses but would drop V1-V8 here.
+    counts = standardize_month_column(counts)
+    registry = standardize_month_column(registry)
+
+    if "SR" not in registry.columns:
+        raise KeyError("Registry table does not contain SR")
+
+    registry_reference = registry[["month", "SR"]].copy()
+    count_months = set(counts["month"])
+    registry_months = set(registry_reference["month"])
+    missing = sorted(registry_months - count_months)
+    if missing:
+        raise ValueError(
+            "Latest phenotype counts are missing registry months: "
+            f"{missing[:10]}"
+        )
+
+    aligned = registry_reference.merge(
+        counts,
+        on="month",
+        how="left",
+        validate="one_to_one",
+    )
     return compute_count_metrics(
         aligned,
         registry_col="SR",
