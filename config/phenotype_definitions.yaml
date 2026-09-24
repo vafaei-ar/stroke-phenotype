@@ -1,0 +1,13 @@
+primary_definitions:
+  D0: "ICD-only baseline"
+  D1: "(CT OR MRI) AND lipid"
+  D2: "(CT OR MRI) AND (lipid OR rehabilitation)"
+  D3: "MRI AND lipid"
+  D4: "MRI AND (lipid OR rehabilitation)"
+  D5: "CT OR MRI"
+  D6: "MRI AND lipid AND rehabilitation"
+  D7: "MRI"
+  D8: "CT AND lipid"
+
+exploratory_definitions:
+  D9: "(CT OR MRI) AND lipid AND rehabilitation"
