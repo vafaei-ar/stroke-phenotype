@@ -93,3 +93,36 @@ def test_mismatched_baseline_stops_without_writing_outputs(tmp_path: Path) -> No
     assert run.returncode != 0
     assert 'NOT reproduced' in run.stderr
     assert not (tmp_path / 'outputs' / 'center1_sensitivity_summary.csv').exists()
+
+
+def test_reference_features_facility_selection(tmp_path: Path) -> None:
+    details, historical, _, _ = make_inputs(tmp_path)
+    reference = tmp_path / 'center1_features_from_raw.csv'
+    pd.DataFrame({'facility_id': ['center1', 'CENTER1']}).to_csv(reference, index=False)
+    argv = [sys.executable, str(SCRIPT), '--legacy-details', str(details),
+            '--historical-monthly', str(historical),
+            '--facility-from-features', str(reference),
+            '--study-start', '2016-12-01', '--study-end', '2017-02-01',
+            '--out-dir', str(tmp_path / 'outputs')]
+    run = subprocess.run(argv, text=True, capture_output=True, check=False)
+    assert run.returncode == 0, run.stderr
+    summary = pd.read_csv(tmp_path / 'outputs' / 'center1_sensitivity_summary.csv')
+    orig = summary[(summary.scenario == 'baseline') & (summary.definition == 'D0')].iloc[0]
+    alt = summary[(summary.scenario == 'facility_filter_first') & (summary.definition == 'D0')].iloc[0]
+    assert orig.total_EHR == 2
+    assert alt.total_EHR == 3
+
+
+def test_wrong_reference_facility_is_rejected(tmp_path: Path) -> None:
+    details, historical, _, _ = make_inputs(tmp_path)
+    reference = tmp_path / 'wrong_features.csv'
+    pd.DataFrame({'facility_id': ['other']}).to_csv(reference, index=False)
+    argv = [sys.executable, str(SCRIPT), '--legacy-details', str(details),
+            '--historical-monthly', str(historical),
+            '--facility-from-features', str(reference),
+            '--study-start', '2016-12-01', '--study-end', '2017-02-01',
+            '--out-dir', str(tmp_path / 'outputs')]
+    run = subprocess.run(argv, text=True, capture_output=True, check=False)
+    assert run.returncode != 0
+    assert 'NOT reproduced' in run.stderr or 'matched no' in run.stderr
+    assert not (tmp_path / 'outputs' / 'center1_sensitivity_summary.csv').exists()
