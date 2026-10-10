@@ -76,6 +76,30 @@ def read_registry_events(path,datecol='StrokeDate'):
     r['event_date']=pd.to_datetime(r[datecol],errors='raise')
     return r
 
+def read_facility_ids_from_features(path):
+    """Read allowed facility IDs from a locally verified, filtered feature export.
+
+    The existing export supplies facility identity only; sensitivity scenarios
+    still use the original, non-deduplicated historical encounter details.
+    """
+    try:
+        reference = pd.read_csv(path, usecols=['facility_id'], dtype={'facility_id': 'string'})
+    except ValueError as exc:
+        raise ValueError('Reference feature export must contain facility_id') from exc
+    identifiers = reference['facility_id'].dropna().str.strip().str.casefold()
+    selected = set(identifiers[identifiers.ne('')].tolist())
+    if not selected:
+        raise ValueError('Reference export contains no nonempty facility identifiers')
+    return selected
+
+
+def facility_mask(df, facility):
+    identifiers = df['FACILITYID'].astype('string').str.strip()
+    if isinstance(facility, set):
+        return identifiers.str.casefold().isin(facility).fillna(False)
+    return identifiers.str.contains(facility, case=False, regex=False, na=False)
+
+
 def first_events(d,facility,facility_first=False,primary_only=False,lookback=None):
     a=d.copy()
     if lookback is not None:
@@ -84,13 +108,13 @@ def first_events(d,facility,facility_first=False,primary_only=False,lookback=Non
         if 'primary_ischemic_dx' not in a:raise ValueError('Primary diagnostic status unavailable')
         if a['primary_ischemic_dx'].isna().any():raise ValueError('Primary diagnostic map incomplete')
         a=a[a['primary_ischemic_dx']].copy()
-    mask=a['FACILITYID'].str.contains(facility,case=False,regex=False,na=False)
+    mask=facility_mask(a, facility)
     if facility_first:a=a.loc[mask].copy()
     # Preserve the legacy notebook's quicksort and first-encounter tie behavior.
     a=a.sort_values('ADMIT_DATE',kind='quicksort')
     a=a.drop_duplicates('PATID',keep='first')
     if not facility_first:
-        a=a[a['FACILITYID'].str.contains(facility,case=False,regex=False,na=False)].copy()
+        a=a.loc[facility_mask(a, facility)].copy()
     return a
 
 def monthly_counts(selected, months):
@@ -135,7 +159,9 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--legacy-details',required=True,help='Protected pre-dedup df_phen_details.csv')
     p.add_argument('--historical-monthly',required=True,help='Frozen PS_conditions.csv containing SR, D0-D8')
-    p.add_argument('--facility-contains',required=True,help='Local site substring, never disclose')
+    facility_selection=p.add_mutually_exclusive_group(required=True)
+    facility_selection.add_argument('--facility-contains',help='Local site substring, never disclose')
+    facility_selection.add_argument('--facility-from-features',help='Verified, already-filtered feature CSV with facility_id; identifiers remain local')
     p.add_argument('--out-dir',required=True,help='Local secure directory for aggregate output')
     p.add_argument('--primary-map',help='Protected encounter-level mapping for primary ischemic diagnosis')
     p.add_argument('--registry-events',help='Protected registry rows with MRN, Type, Diagnosis, and date')
@@ -148,8 +174,10 @@ def main():
         p.error('--lookback-start requires --registry-events; aggregate SR cannot establish a matched source lookback')
     if args.lookback_start and pd.Timestamp(args.lookback_start) > pd.Timestamp(args.study_start):
         p.error('--lookback-start must be on or before --study-start for a full-window comparison')
-    if not args.facility_contains.strip():
+    if args.facility_contains is not None and not args.facility_contains.strip():
         p.error('--facility-contains cannot be blank')
+    facility=(read_facility_ids_from_features(args.facility_from_features)
+              if args.facility_from_features else args.facility_contains)
     d=read_details(args.legacy_details)
     frozen=read_monthly(args.historical_monthly,args.study_start,args.study_end)
     if args.primary_map:
@@ -177,7 +205,12 @@ def main():
     registry_events=read_registry_events(args.registry_events,args.registry_date_column) if args.registry_events else None
     agg=[];summary=[]
     for name,kwargs in scenarios.items():
-        selected=first_events(d,args.facility_contains,**kwargs)
+        selected=first_events(d,facility,**kwargs)
+        if name == 'baseline' and selected.empty:
+            raise RuntimeError(
+                'Facility selection matched no historical first-event records. '
+                'Use --facility-from-features with the verified Center 1 features export.'
+            )
         ct=monthly_counts(selected,months)
         if name=='baseline':
             diff=ct[DEFS].astype(int).subtract(frozen[DEFS].astype(int))
