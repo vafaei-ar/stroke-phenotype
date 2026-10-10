@@ -12,7 +12,7 @@ Required:
 
 - `outcomes/df_phen_details.csv` **before** first-event deduplication, with columns `PATID`, `ENCOUNTERID`, `FACILITYID`, `ADMIT_DATE`, `MRI-2`, `MRI-ENC`, `CT-2`, `CT-ENC`, `lip`, `phy`. The existing raw-source reconstruction can recreate this table using `scripts/01_prepare_center1_features.py --legacy-details-out ...`. Do **not** provide the already deduplicated `center1_features.csv`.
 - `outcomes/PS_conditions.csv` with a month/date column, `SR` and `D0`-`D8` for December 2016 to December 2023.
-- The **local** Center 1 facility substring used in the original count-generation script. The exact value must remain outside Git.
+- `data/processed/center1_features_from_raw.csv`, the **already filtered, locally validated Center 1 feature export**, used only to recover the set of allowed facility identifiers. The script reconstructs the actual sensitivity counts from the original pre-deduplication table. You do not need to know or disclose the facility names. Alternatively, `--facility-contains` still accepts the original locally known substring.
 
 Optional:
 
@@ -27,11 +27,11 @@ From the `reproducible-analysis-pipeline` repository checkout:
 python scripts/07_center1_first_event_sensitivity.py \
   --legacy-details ../outcomes/df_phen_details.csv \
   --historical-monthly ../outcomes/PS_conditions.csv \
-  --facility-contains '<LOCAL CENTER 1 FACILITY SUBSTRING>' \
+  --facility-from-features data/processed/center1_features_from_raw.csv \
   --out-dir outputs/center1_first_event_sensitivity
 ```
 
-The script will stop with an error if (1) the stored 85-month reference totals differ from the manuscript or (2) the reconstructed monthly D0-D8 baseline differs **in any month** from the historical file. The verified full-period checkpoints are D0 6,582, D1 4,953, D3 4,320, and SR 4,000 (the script also checks the other D0-D8 totals). Do not interpret or circulate results if this check fails.
+The script will stop with an error if (1) the stored 85-month reference totals differ from the manuscript or (2) the reconstructed monthly D0-D8 baseline differs **in any month** from the historical file. Facility identifiers from the previously filtered feature export are matched **exactly**, case-insensitively, to identifiers in the original detail table; the script does not infer facility identity by optimizing performance against the registry. The verified full-period checkpoints are D0 6,582, D1 4,953, D3 4,320, and SR 4,000 (the script also checks the other D0-D8 totals). Do not interpret or circulate results if this check fails.
 
 Then, if the optional local files are prepared:
 
@@ -39,7 +39,7 @@ Then, if the optional local files are prepared:
 python scripts/07_center1_first_event_sensitivity.py \
   --legacy-details ../outcomes/df_phen_details.csv \
   --historical-monthly ../outcomes/PS_conditions.csv \
-  --facility-contains '<LOCAL CENTER 1 FACILITY SUBSTRING>' \
+  --facility-from-features data/processed/center1_features_from_raw.csv \
   --primary-map /secure/primary_ischemic_encounter_map.csv \
   --registry-events /secure/registry_events.csv \
   --registry-date-column '<VERIFIED REGISTRY ADMISSION DATE COLUMN>' \
